@@ -1,3 +1,10 @@
+import os,sys
+#os.chdir(sys.path[0])
+sys.path.append('/root/gsc/offlinerl_experiments/OfflineRL-Kit')
+# gsc/gsc_aimax_backout/OfflineRL-Kit
+print('current path:',os.getcwd())
+print('sys path:',sys.path)
+
 import argparse
 import random
 
