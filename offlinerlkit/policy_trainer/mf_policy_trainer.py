@@ -93,45 +93,71 @@ class MFPolicyTrainer:
             #             break
 
             # off policy train
-            # if e % interaction_interval == interaction_interval - 1:
-            #     interaction_times = 0
-            #     obs = self.eval_env.reset()
-            #     for _steps in range(self._step_per_epoch):
-                    
-            #         action = self.policy.select_action(obs, deterministic=False)
-            #         next_obs, reward, terminal, _ = self.eval_env.step(action.flatten())
-            #         # print(f'interaction data \n obs:{obs}\n action:{action}\n next_obs:{next_obs}\n reward:{reward}\n terminal:{terminal}')
-            #         # batch = 
-            #         self.interaction_buffer.add(
-            #             obs=obs,
-            #             next_obs=next_obs,
-            #             action=action,
-            #             reward=reward,
-            #             terminal=terminal
-            #         )
-            #         obs = next_obs
-            #         interaction_times += 1
-            #         if terminal:
-            #             break
 
-            #     Train_times = 5
-            #     batch_size = min(32, interaction_times)
-            #     for train_time in range(Train_times):
+            if e % interaction_interval == interaction_interval - 18:
+                interaction_times = 0
+                obs = self.eval_env.reset()
+                for _steps in range(self._step_per_epoch):
+                    
+                    action = self.policy.select_action(obs, deterministic=False)
+                    next_obs, reward, terminal, _ = self.eval_env.step(action.flatten())
+                    # print(f'interaction data \n obs:{obs}\n action:{action}\n next_obs:{next_obs}\n reward:{reward}\n terminal:{terminal}')
+                    # batch = 
+                    self.interaction_buffer.add(
+                        obs=obs,
+                        next_obs=next_obs,
+                        action=action,
+                        reward=reward,
+                        terminal=terminal
+                    )
+                    obs = next_obs
+                    interaction_times += 1
+                    if terminal:
+                        break
+
+                Train_times = 5
+                batch_size = min(32, interaction_times)
+                _device = "cuda" if torch.cuda.is_available() else "cpu"
+                for train_time in range(Train_times):
 
 
-            #         batch = self.interaction_buffer.sample(batch_size=batch_size)
-            #         # 数据增强
-            #         # obs_random = np.random.randn(obs.shape[0], obs.shape[1]) / 100000 
-            #         # print(f'obs_random:{obs_random}')
-            #         # next_obs_random = np.random.randn(obs.shape[0], obs.shape[1]) / 100000 
-            #         # print(f'next_obs_random:{next_obs_random}')
-            #         # obs_augmentation = obs_random + obs
-            #         # next_obs_augmentation = next_obs_random + next_obs
-            #         # add random data to data augmentation
-            #         # self.buffer_train.add(obs_augmentation, next_obs_augmentation, action, reward, terminal)
+                    batch = self.interaction_buffer.sample(batch_size=batch_size)
+                    print(f"batch['observations'].size():{batch['observations'].size()}")
+                    # 数据增强
+                    _observations = batch['observations']
+                    _next_observations = batch['next_observations']
+
+
+                    obs_random = np.random.randn(_observations.shape[0], _observations.shape[1]) / 1000
+                    obs_random = torch.tensor(data=obs_random, device=_device)
+                    # print(f'obs_random:{obs_random}')
+                    next_obs_random = np.random.randn(_observations.shape[0], _observations.shape[1]) / 1000
+                    next_obs_random = torch.tensor(data=next_obs_random, device=_device)
+                    # print(f'next_obs_random:{next_obs_random}')
+                    obs_augmentation = obs_random + _observations
+                    next_obs_augmentation = next_obs_random + _next_observations
                     
-            #         loss = self.policy.learn(batch)
                     
+                    batch_augmentaton = {
+                        'observations': torch.tensor(data=obs_augmentation, dtype=torch.float32, device=_device),
+                        'actions': batch['actions'].clone().detach(),
+                        'next_observations': torch.tensor(data=next_obs_augmentation, dtype=torch.float32, device=_device),
+                        'terminals': batch['terminals'].clone().detach(),
+                        'rewards': batch['rewards'].clone().detach()
+                    }
+
+                    total_batch = {}
+
+                    for a_item, b_item in zip(batch.items(), batch_augmentaton.items()):
+                        if a_item[0] == b_item[0]:
+                            total_batch[a_item[0]] = torch.cat([a_item[1], b_item[1]],dim=0)
+                    # print(total_batch)
+                    # kkkk
+                    # add random data to data augmentation
+                    # self.buffer_train.add(obs_augmentation, next_obs_augmentation, action, reward, terminal)
+                    # print(f"total_batch['observations'].size():{total_batch['observations'].size()}")
+                    # print(f"total_batch['next_observations'].size():{total_batch['next_observations'].size()}")
+                    loss = self.policy.learn(total_batch)
 
 
 
