@@ -20,6 +20,7 @@ class MFPolicyTrainer:
         policy: BasePolicy,
         eval_env: gym.Env,
         buffer: ReplayBuffer,
+        interaction_buffer: ReplayBuffer,
         logger: Logger,
         epoch: int = 1000,
         step_per_epoch: int = 1000,
@@ -32,6 +33,7 @@ class MFPolicyTrainer:
         self.eval_env = eval_env
         self.buffer = buffer
         self.logger = logger
+        self.interaction_buffer = interaction_buffer
 
         self._epoch = epoch
         self._step_per_epoch = step_per_epoch
@@ -51,17 +53,87 @@ class MFPolicyTrainer:
         for e in range(1, self._epoch + 1):
 
             self.policy.train()
-
+            
             pbar = tqdm(range(self._step_per_epoch), desc=f"Epoch #{e}/{self._epoch}")
+            # 每隔十轮和环境交互一次
+            interaction_interval = 20
+            # if e % interaction_interval != interaction_interval - 1:
+                # pass
             for it in pbar:
                 batch = self.buffer.sample(self._batch_size)
                 loss = self.policy.learn(batch)
                 pbar.set_postfix(**loss)
-
                 for k, v in loss.items():
                     self.logger.logkv_mean(k, v)
-                
                 num_timesteps += 1
+            
+            # on policy train
+            # if e % interaction_interval == interaction_interval - 1:
+            #     obs = self.eval_env.reset()
+            #     for _ in range(self._step_per_epoch):
+                    
+            #         action = self.policy.select_action(obs, deterministic=False)
+            #         next_obs, reward, terminal, _ = self.eval_env.step(action.flatten())
+            #         # print(f'interaction data \n obs:{obs}\n action:{action}\n next_obs:{next_obs}\n reward:{reward}\n terminal:{terminal}')
+            #         # batch = 
+            #         self.interaction_buffer.add(
+            #             obs=obs,
+            #             next_obs=next_obs,
+            #             action=action,
+            #             reward=reward,
+            #             terminal=terminal
+            #         )
+                    
+
+            #         batch = self.interaction_buffer.sample(batch_size=1)
+                    
+            #         loss = self.policy.learn(batch)
+            #         obs = next_obs
+            #         if terminal:
+            #             break
+
+            # off policy train
+            # if e % interaction_interval == interaction_interval - 1:
+            #     interaction_times = 0
+            #     obs = self.eval_env.reset()
+            #     for _steps in range(self._step_per_epoch):
+                    
+            #         action = self.policy.select_action(obs, deterministic=False)
+            #         next_obs, reward, terminal, _ = self.eval_env.step(action.flatten())
+            #         # print(f'interaction data \n obs:{obs}\n action:{action}\n next_obs:{next_obs}\n reward:{reward}\n terminal:{terminal}')
+            #         # batch = 
+            #         self.interaction_buffer.add(
+            #             obs=obs,
+            #             next_obs=next_obs,
+            #             action=action,
+            #             reward=reward,
+            #             terminal=terminal
+            #         )
+            #         obs = next_obs
+            #         interaction_times += 1
+            #         if terminal:
+            #             break
+
+            #     Train_times = 5
+            #     batch_size = min(32, interaction_times)
+            #     for train_time in range(Train_times):
+
+
+            #         batch = self.interaction_buffer.sample(batch_size=batch_size)
+            #         # 数据增强
+            #         # obs_random = np.random.randn(obs.shape[0], obs.shape[1]) / 100000 
+            #         # print(f'obs_random:{obs_random}')
+            #         # next_obs_random = np.random.randn(obs.shape[0], obs.shape[1]) / 100000 
+            #         # print(f'next_obs_random:{next_obs_random}')
+            #         # obs_augmentation = obs_random + obs
+            #         # next_obs_augmentation = next_obs_random + next_obs
+            #         # add random data to data augmentation
+            #         # self.buffer_train.add(obs_augmentation, next_obs_augmentation, action, reward, terminal)
+                    
+            #         loss = self.policy.learn(batch)
+                    
+
+
 
             if self.lr_scheduler is not None:
                 self.lr_scheduler.step()

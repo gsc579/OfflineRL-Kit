@@ -107,6 +107,15 @@ def train(args=get_args()):
     )
     buffer.load_dataset(dataset)
 
+    interaction_buffer = ReplayBuffer(
+        buffer_size=64,
+        obs_shape=args.obs_shape,
+        obs_dtype=np.float32,
+        action_dim=args.action_dim,
+        action_dtype=np.float32,
+        device=args.device
+    )
+
     # log
     log_dirs = make_log_dirs(args.task, args.algo_name, args.seed, vars(args))
     # key: output file name, value: output handler type
@@ -123,6 +132,7 @@ def train(args=get_args()):
         policy=policy,
         eval_env=env,
         buffer=buffer,
+        interaction_buffer=interaction_buffer,
         logger=logger,
         epoch=args.epoch,
         step_per_epoch=args.step_per_epoch,
