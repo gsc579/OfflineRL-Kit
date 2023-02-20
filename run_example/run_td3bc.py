@@ -27,7 +27,7 @@ from offlinerlkit.policy import TD3BCPolicy
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--algo-name", type=str, default="td3bc")
+    parser.add_argument("--algo_name", type=str, default="td3bc")
     parser.add_argument("--task", type=str, default="hopper-medium-v2")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--actor-lr", type=float, default=3e-4)
@@ -44,6 +44,8 @@ def get_args():
     parser.add_argument("--eval_episodes", type=int, default=10)
     parser.add_argument("--batch-size", type=int, default=256)
     parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu")
+
+    parser.add_argument("--interaction_tag", default=False, action="store_true")
 
     return parser.parse_args()
 
@@ -116,6 +118,8 @@ def train(args=get_args()):
         device=args.device
     )
 
+    if args.interaction_tag:
+        args.algo_name = 'new_' + args.algo_name
     # log
     log_dirs = make_log_dirs(args.task, args.algo_name, args.seed, vars(args))
     # key: output file name, value: output handler type
@@ -134,6 +138,7 @@ def train(args=get_args()):
         buffer=buffer,
         interaction_buffer=interaction_buffer,
         logger=logger,
+        interaction_tag=args.interaction_tag,
         epoch=args.epoch,
         step_per_epoch=args.step_per_epoch,
         batch_size=args.batch_size,

@@ -19,6 +19,10 @@ COLORS = (
         '#8D6AB8', # purple
         '#00CD66', # green
         '#FFD700', # yellow
+        '#00FFFF', # 'cyan'
+        '#00008B', # 'darkblue':
+        '#008B8B', # 'darkcyan':
+        '#B8860B', # 'darkgoldenrod':
     ]
 )
 
